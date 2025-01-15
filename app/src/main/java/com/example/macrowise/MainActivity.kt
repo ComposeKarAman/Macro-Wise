@@ -123,11 +123,8 @@ fun MacroWiseUI(modifier: Modifier) {
                     { heightCm = it },
                     label = { Text("cm") }
                 )
-                if (heightCm.isNotEmpty()) {
-                    finalHeight = heightCm.toDoubleOrNull() ?: 0.0
-                }
             }
-            else if(unit == "US Units"){
+            else{
                 Column {
                     OutlinedTextField(
                         heightFeet,
@@ -271,21 +268,29 @@ fun MacroWiseUI(modifier: Modifier) {
                         finalWeight = (weightLbs.toDoubleOrNull() ?: 0.0) * 0.453592
                     }
                 }
+                else {
+                    if (heightCm.isNotEmpty()) {
+                        finalHeight = heightCm.toDoubleOrNull() ?: 0.0
+                    }
+                    if (weight.isNotEmpty()) {
+                        finalWeight = weight.toDoubleOrNull() ?: 0.0
+                    }
+                }
 
-                if(gender == "SELECT") {
+                if (gender == "SELECT") {
                     Toast.makeText(context, "Please select Gender", Toast.LENGTH_SHORT).show()
                     alertEnable = false
                 }
-                if(activityBtn == "SELECT"){
+                else if (activityBtn == "SELECT") {
                     Toast.makeText(context, "Please select Activity level", Toast.LENGTH_SHORT).show()
                     alertEnable = false
                 }
-                else{
+                else {
                     if (age.isEmpty()) age = "0"
-                    if (heightCm.isEmpty()) heightCm = ""
+                    if (heightCm.isEmpty()) heightCm = "0"
                     if (heightFeet.isEmpty()) heightFeet = "0"
                     if (heightInch.isEmpty()) heightInch = "0"
-                    if (weight.isEmpty()) weight = ""
+                    if (weight.isEmpty()) weight = "0"
                     if (weightLbs.isEmpty()) weightLbs = "0"
                 }
                 if (gender != "SELECT" && activityBtn != "SELECT") alertEnable = true
