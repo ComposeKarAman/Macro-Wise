@@ -1,6 +1,7 @@
 package com.example.macrowise
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -28,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -58,12 +60,13 @@ fun MacroWiseUI(modifier: Modifier) {
     var heightCm by remember { mutableStateOf("") }
     var heightFeet by remember { mutableStateOf("") }
     var heightInch by remember { mutableStateOf("") }
-    var heightUnit by remember { mutableStateOf("cm") }
+    var finalHeight by remember { mutableDoubleStateOf(0.0) }
     var weight by remember { mutableStateOf("") }
     var weightLbs by remember { mutableStateOf("") }
+    var finalWeight by remember { mutableDoubleStateOf(0.0) }
     var weightUnit by remember { mutableStateOf("kg") }
     var gender by remember { mutableStateOf("SELECT") }
-    var activity by remember { mutableDoubleStateOf(0.0) }
+    var activityLevel by remember { mutableDoubleStateOf(0.0) }
     var activityBtn by remember { mutableStateOf("SELECT") }
     var genderDDM by remember { mutableStateOf(false) }
     var unit by remember { mutableStateOf("Metric Units")}
@@ -71,14 +74,12 @@ fun MacroWiseUI(modifier: Modifier) {
     var activityDDM by remember { mutableStateOf(false) }
     var alertEnable by remember { mutableStateOf(false) }
 
-
-
     Column(
         Modifier
             .fillMaxSize()
             .padding(46.dp)
     ) {
-        Text("Hello There,", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+        Text("Macro Wise", fontWeight = FontWeight.Bold, fontSize = 24.sp)
 
         Column(
             modifier.fillMaxSize(),
@@ -95,6 +96,7 @@ fun MacroWiseUI(modifier: Modifier) {
                     DropdownMenuItem({ Text("Metric Units") }, {
                         unitDDM = false
                         unit = "Metric Units"
+                        weightUnit = "kg"
                     })
                     DropdownMenuItem({ Text("US Units") }, {
                         unitDDM = false
@@ -107,9 +109,12 @@ fun MacroWiseUI(modifier: Modifier) {
             Text("Enter your Age:")
             OutlinedTextField(
                 age,
-                { age = it }
+                { age = it },
+                label = { Text("Enter your Age") }
             )
-
+            if (age.isNotEmpty()){
+                age = (age.toIntOrNull() ?: 0).toString()
+            }
 
             Text("Enter your Height:")
             if (unit == "Metric Units") {
@@ -118,8 +123,11 @@ fun MacroWiseUI(modifier: Modifier) {
                     { heightCm = it },
                     label = { Text("cm") }
                 )
+                if (heightCm.isNotEmpty()) {
+                    finalHeight = heightCm.toDoubleOrNull() ?: 0.0
+                }
             }
-            else {
+            else if(unit == "US Units"){
                 Column {
                     OutlinedTextField(
                         heightFeet,
@@ -132,10 +140,6 @@ fun MacroWiseUI(modifier: Modifier) {
                         heightInch,
                         { heightInch = it },
                         label = { Text("inch") })
-
-                    if (heightFeet.isNotEmpty() && heightInch.isNotEmpty()) {
-                        heightCm = ((heightFeet.toIntOrNull() ?: 1) * 30.48 +( heightInch.toIntOrNull() ?: 1) * 2.54).toString()
-                    }
                 }
             }
 
@@ -151,10 +155,6 @@ fun MacroWiseUI(modifier: Modifier) {
                     weightLbs,
                     { weightLbs = it },
                     label = { Text(weightUnit) })
-
-                if(weight.isNotEmpty()){
-                    weight = ((weightLbs.toDoubleOrNull() ?: 1.0) * 0.453592).toString()
-                }
             }
 
             Text("Select your Gender:")
@@ -184,27 +184,38 @@ fun MacroWiseUI(modifier: Modifier) {
                     Icon(Icons.Default.ArrowDropDown, contentDescription = null)
                 }
                 DropdownMenu(activityDDM, { activityDDM = false }) {
-                    DropdownMenuItem({ Text("Low Activity") },
+                    DropdownMenuItem({ Text("little/no exercise") },
                         {
                             activityDDM = false
                             activityBtn = "Low Activity"
-                            activity = 1.375
+                            activityLevel = 1.2
                         })
-
-                    DropdownMenuItem({ Text("Moderate Activity") },
+                    DropdownMenuItem({ Text("light exercise/sports 1-3 days/week") },
+                        {
+                            activityDDM = false
+                            activityBtn = "Low Activity"
+                            activityLevel = 1.375
+                        })
+                    DropdownMenuItem({ Text("moderate exercise 3-5 days/week") },
                         {
                             activityDDM = false
                             activityBtn = "Moderate Activity"
-                            activity = 1.55
+                            activityLevel = 1.55
                         })
-
-                    DropdownMenuItem({ Text("High Activity") },
+                    DropdownMenuItem({ Text("hard exercise 6-7 days/week") },
                         {
                             activityDDM = false
                             activityBtn = "High Activity"
-                            activity = 1.725
+                            activityLevel = 1.725
+                        })
+                    DropdownMenuItem({ Text("very hard exercise/physical job") },
+                        {
+                            activityDDM = false
+                            activityBtn = "High Activity"
+                            activityLevel = 1.9
                         })
                 }
+
             }
 
             Spacer(Modifier.padding(16.dp))
@@ -220,21 +231,20 @@ fun MacroWiseUI(modifier: Modifier) {
                                 heightCm = ""
                                 heightFeet = ""
                                 heightInch = ""
-                                heightUnit = "cm"
-                                weightUnit = "kg"
                                 weight = ""
+                                weightLbs = ""
                                 gender = "SELECT"
                                 activityBtn = "SELECT"
-                                activity = 0.0
+                                activityLevel = 0.0
                                 alertEnable = false
                             }) { Text("Check Another") }
                     },
                     text = {
                         Column {
                             var obj = Calculation(
-                                weight.toDouble(),
-                                activity,
-                                heightCm.toDouble(),
+                                finalWeight,
+                                activityLevel,
+                                finalHeight,
                                 age.toInt(),
                                 gender
                             )
@@ -249,8 +259,39 @@ fun MacroWiseUI(modifier: Modifier) {
                     })
             }
 
-            Button({ alertEnable = true })
-            { Text("Calculate", fontWeight = FontWeight.Bold) }
+            val context = LocalContext.current
+
+            Button({
+                if (unit == "US Units") {
+                    if (heightFeet.isNotEmpty() && heightInch.isNotEmpty()) {
+                        finalHeight = (heightFeet.toDoubleOrNull() ?: 0.0) * 30.4 +
+                                (heightInch.toDoubleOrNull() ?: 0.0) * 2.54
+                    }
+                    if (weightLbs.isNotEmpty()) {
+                        finalWeight = (weightLbs.toDoubleOrNull() ?: 0.0) * 0.453592
+                    }
+                }
+
+                if(gender == "SELECT") {
+                    Toast.makeText(context, "Please select Gender", Toast.LENGTH_SHORT).show()
+                    alertEnable = false
+                }
+                if(activityBtn == "SELECT"){
+                    Toast.makeText(context, "Please select Activity level", Toast.LENGTH_SHORT).show()
+                    alertEnable = false
+                }
+                else{
+                    if (age.isEmpty()) age = "0"
+                    if (heightCm.isEmpty()) heightCm = ""
+                    if (heightFeet.isEmpty()) heightFeet = "0"
+                    if (heightInch.isEmpty()) heightInch = "0"
+                    if (weight.isEmpty()) weight = ""
+                    if (weightLbs.isEmpty()) weightLbs = "0"
+                }
+                if (gender != "SELECT" && activityBtn != "SELECT") alertEnable = true
+            })
+            {
+                Text("Calculate", fontWeight = FontWeight.Bold) }
         }
     }
 }
